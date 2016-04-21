@@ -1,0 +1,217 @@
+\documentclass[pdftex,12pt]{article}
+
+\usepackage[dvips]{graphicx}            % to include images
+\usepackage[portuguese]{babel}
+\usepackage{setspace}
+\usepackage{float}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{cite}
+\usepackage{times}
+\usepackage{url}
+
+\usepackage{placeins} % floatbar
+
+%\bibliography{projeto}
+\bibliographystyle{plain}
+\def\refname{Referências Bibliográficas}
+
+\oddsidemargin 0pt  % was 38
+\evensidemargin 0pt % was 38
+\marginparwidth 0pt % was 68
+% 
+\topmargin 50pt   % was 27
+\headheight 0pt  % was 12
+\headsep 0pt     % was 25
+%\footheight 0pt  % was 12
+\footskip 30pt   % was 30
+ 
+\textwidth 470pt      % was 390pt
+\textheight 600.5pt  % was 536.5
+
+\usepackage[utf8]{inputenc}
+
+\input{abaco.tex}
+
+\title{Projeto IC PIBIC 2016}
+
+\begin{document}
+
+\thispagestyle{empty}
+
+
+\begin{center} 
+\Large 
+Instituto de Computação \\
+Universidade Estadual de Campinas
+
+\end{center}
+
+
+\bigskip
+\bigskip
+\bigskip
+
+{\LARGE
+  \begin{center}
+      \textbf{Caracterização de PUFs usando representações 
+      topológicas de variáveis aleatórias} 
+
+%(\textit{Physical Unclonable Functions})
+
+    \vspace{1cm}
+
+   Projeto de Iniciação Científica
+  \end{center}
+}
+
+\vfill
+
+
+\hspace{3cm}
+\begin{tabular}{rl}
+
+	Aluno:  & Rodrigo de Castro Surita \\
+    		& \emph{ra139095@fee.unicamp.br} \\ 
+    \\
+          
+  	Orientador: & Mário Lúcio Côrtes \\
+                & cortes@ic.unicamp.br \\ 
+         
+\end{tabular}
+\newpage
+
+\begin{spacing}{1.5}
+%\begin{spacing}{2.0}
+
+
+\section*{Resumo}
+
+\textit{Physical Unclonable Functions} (PUFs) são dispositivos capazes de explorar a variabilidade de processos de fabricação para criar funções pseudoaleatórias teoricamente únicas e inclonáveis. São geralmente utilizados em aplicações de segurança, como autenticação e geração de chaves, com vantagens teóricas sobre métodos tradicionais. Apesar das vantagens, muitos modelos de PUFs revelaram ser vulneráveis contra modelagem estatística, ataques de canal auxiliar e engenharia reversa. 
+
+Este projeto tem como objetivo encontrar representações topológicas para modelos PUFs e a partir destas obter: (1) modelos para ataques práticos de modelagem estatística e (2) métricas para determinar se um PUF tem uma boa resistência teórica a ataques de modelagem. 
+
+Para se obter um modelo topológico de PUF, o princípio visa isolar os parâmetros aleatórios advindos do processo de fabricação considerados no projeto e representá-los em coordenadas independentes. Nesta representação, procura-se obter um algoritmo eficiente de ataque utilizando métodos de otimização linear.
+
+\section{Introdução}\label{sec:introducao}
+
+\textit{Physical Unclonable Functions} (PUFs) ou Funções Físicas Inclonáveis, em tradução livre, são dispositivos que exploram a variação estatística de processos de fabricação para gerar funções capazes de mapear um conjunto de entradas (ou desafios) em um conjunto de saídas (ou respostas)~\cite{bookspringerlink:10.1007}. Idealmente, diversas funções, ou instâncias, produzidas por um mesmo processo são diferentes e independentes. A relação entre desafios e respostas deve-se exclusivamente a variações aleatórias de processo. Diversos características físicas podem ser usadas para formar uma PUF, como reflexão de luz, capacitâncias, dissipação de calor, atrasos de propagação em linhas, dentre outras~\cite{bookspringerlink:10.1007,RF-DNA}. Ainda assim, tecnologias baseadas em silício tem maior relevância devido à maturidade dos processos de fabricação, facilidade de integração com sistemas digitais e uma moderada proteção contra ataques físicos~\cite{MajzoobiKP09,RfidPUF}. 
+    
+PUFs possuem aplicações na área de segurança, como autenticação de dispositivos~\cite{SuhDevadas2007}, geração de chaves~\cite{LeeLGSDD_PUFSecretKey_VLSI04} e ativação remota~\cite{GassendCDD_CCSC02}. Teoricamente possuem várias vantagens sobre técnicas de autenticação tradicionais como chaves armazenadas em memórias, podendo resultar em circuitos pequenos, de baixo custo e mais resilientes à ataques.
+    
+Apesar de promissores, diversos modelos de PUFs sofreram críticas devido a vulnerabilidades presentes em algumas arquiteturas~\cite{PUFAnalysis, MajzoobiKP09, MajzoobiKP08}, que permitem ataques como: 
+(1) modelagem estatística e por aprendizado de máquina, usando correlações entre entradas e saídas para fins de regressão;
+(2) engenharia reversa dos parâmetros aleatórios, caso os parâmetros sejam direta ou indiretamente observáveis;
+(3) \textit{side-channel attacks} ou ataques de canais auxiliares, que são relacionados a vazamentos de informação não relacionados às saídas, variações no campo magnético próximo, na tensão da fonte de alimentação ou no perfil de emissão de fótons.
+
+A sucessibilidade a modelagem estatística pode restringir o uso da função em algumas aplicações, já que pode ser realizada apenas interceptando um conjunto significativo de pares desafio-resposta sem que o atacante tenha acesso físico à PUF. 
+Nestes ataques, pressupõe-se que um atacante obteve um conjunto de pares desafio-resposta, denominado conjunto de treinamento, e a partir deste pode formar modelos de regressão e prever a resposta da função para uma novo conjunto de entradas desconhecidas~\cite{RuhrmairD13,RuhrmairSSDDS10}. 
+
+Dentre os modelos mais atacados por modelagem na literatura está o \textit{Arbiter PUF}~\cite{GassendLCDD04}. Um modelo baseado em atraso cujo funcionamento depende de dois pulsos elétricos chaveados por uma série de $N$ CrossBars (Figura \ref{fig:apuf}). Cada bit do desafio chaveia um crossBar (Figura \ref{fig:crossbar}). Como os atrasos entre as trilhas diferem entre si, os pulsos terminam a série com uma certa defasagem que difere entre desafios escolhidos. Para medi-la, é colocado um árbitro, implementado com um Flip-Flop D alimentado pelas linhas nas entradas D e Clk. A resposta do árbitro será 1 caso o sinal D seja mais rápido e 0 caso contrário.
+
+\FloatBarrier
+
+\begin{figure}
+\centering
+\label{fig:crossbar}
+\includegraphics[width=4cm]{crossbar.png}
+\caption{Crossbar Implementado com dois multiplexadores.}
+\end{figure}
+
+\FloatBarrier
+
+Em cada crossBar existem 4 parâmetros aleatórios de processo considerados, referentes ao atraso de cada uma das possíveis linhas (Equações \ref{eq:crossbar} e \ref{eq:crossba2}), porém para a estimativa da diferença entre pulsos são relevantes apenas as diferenças entre canais opostos do crossBar. Sendo assim, cada crossBar possuí apenas 2 parâmetros aleatórios independentes. Analogamente, um Arbiter PUF possuí $2N$ parâmetros aleatórios independentes.
+
+\begin{eqnarray}
+\label{eq:crossbar}
+Q_1 = \left\{
+	\begin{array}{ll}
+		X_1 \ \mbox{after } \ delay_1  & \mbox{if } c = 0 \\
+		X_2 \ \mbox{after } \ delay_2  & \mbox{if } c = 1
+	\end{array}
+\right.
+\end{eqnarray}
+
+\begin{eqnarray}
+\label{eq:crossba2}
+Q_2 = \left\{
+	\begin{array}{ll}
+		X_2 \ \mbox{after } \ delay_3  & \mbox{if } c = 0 \\
+		X_1 \ \mbox{after } \ delay_4  & \mbox{if } c = 1
+	\end{array}
+\right.
+\end{eqnarray}
+
+
+\begin{figure}
+\label{fig:apuf}
+\centering
+\includegraphics[width=10cm]{apuf.png}
+\caption{Representação de um Arbiter PUF com N níveis.}
+\end{figure}
+
+
+O Arbiter PUF já foi atacado por diversos métodos de modelagem estatística, como SVMs, redes neurais e regressões logísticas~\cite{RuhrmairSSDDS10,RuhrmairD13}. Também existem técnicas que permitem maiores precisões com conjuntos de treinamento menores~\cite{RuhrmairD13}. Outros modelos também tem ataques semelhantes demonstrados. Ainda assim, novas propostas de PUFs são publicadas sem que exista uma métrica de projeto que permita estimar se um projeto terá uma resistência esperada a ataques de modelagem, sendo que só é possível determinar estas propriedades aplicando diversos métodos de aprendizado sobre implementações dos dispositivos e verificando se a precisão dos modelos está dentro de valores esperados. Também não existem modelos de aprendizado que são comprovadamente eficientes em subclasses de PUFs, sendo que é necessário verificar o melhor modelo por tentativa e erro.
+
+\section{Objetivos}\label{sec:objetivos}
+
+Diversos modelos de PUFs já tiveram seu uso desencorajado devido evidências que apontam que estes não são seguros para fins de autenticação~\cite{RuhrmairSSDDS10,RuhrmairD13}. Dentre as falhas está a vulnerabilidade de algumas funções a ataques estatísticos e modelagem por aprendizado de máquina. Ainda assim, não existe um modelo genérico para atacar subclasses de PUFs, nem para verificar se um PUF possuí índices de imprevisibilidade condizentes com as aplicações necessárias apenas por uma análise de sua arquitetura. 
+
+Este trabalho tem como objetivos principais:
+\begin{enumerate}
+\item obter modelos topológicos para subclasses de PUFs a partir de um estudo da arquitetura dos dispositivos e das relações entre suas variáveis aleatórias;
+\item criar heurísticas para atacar PUFs em espaços topológicos de parâmetros aleatórios;
+\item derivar uma métrica, analisando representações espaciais, que permita verificar durante a especificação de um PUF se este pode ser teoricamente resistente à ataques de modelagem estatística;
+\end{enumerate}
+
+
+\section{Métodos}\label{sec:metodos}
+
+A análise dos modelos pressupõem que de acordo com a especificação de um PUF, é possível isolar um número finito $N_a$ de parâmetros aleatórios independentes previstos no projeto que participam da formação da resposta da função. Desta forma, todas as funções obtidas com um mesmo design pode ser representada em um espaço de dimensão $N_a$ com as seguintes propriedades:
+
+\begin{enumerate}
+\item É composto de $N_a$ dimensões correspondentes a cada variável aleatória prevista no design do PUF. 
+\item Cada instância de PUF representa um ponto, determinando o lugar de cada parâmetro aleatório da função dentro da dimensão correspondente.
+\item Um conjunto de pares desafio-resposta representam um politopo neste espaço, que contém todas as instâncias que produzem aquele conjunto de pares desafio-resposta.
+\end{enumerate}
+
+Nestas topologias, os métodos de ataque consideram um politopo formado pela intersecção dos politopos referentes aos pares desafio-resposta de treinamento. De acordo com a propriedade 3, a função sob ataque é um ponto que está contido nesta região. Espera-se que possível prever respostas para outros desafios considerando que as instâncias que estão dentro do politopo melhor aproximam a função original. As heurísticas de modelagem que serão desenvolvidas devem dedicar-se a obter o politopo de intersecção e estimar a resposta do PUF a partir das instâncias que ele contém.
+
+Métricas para determinar se um modelo de PUF é teoricamente resistente à ataques de modelagem deve relacionar a variabilidade de repostas dentro do politopo de intersecção, conforme novos pares desafio-resposta são considerados. Espera-se usar modelos de otimização linear para tratar os problemas em questão.
+
+Para simplificar a análise, primeiro os primeiros experimentos abordaram apenas o Arbiter PUF. Uma vez consolidados, os métodos serão estendidos para outros modelos de PUFs.
+
+Inicialmente, todos os modelos de PUF, representações espaciais e heurísticas de modelagem serão especificados em linguagem Python~\cite{} usando o pacote Numpy~\cite{} para programação vetorial, o pacote CVXOPT~\cite{} para otimização linear e o pacote MyHDL~\cite{} para a descrição de circuitos digitais em alto nível. Poderão ser feitas possíveis implementações em VHDL para alguns modelos de PUFs devido a sua complexidade.
+
+A execução de problemas computacionais de larga escala será realizada no cluster do Instituto de Computação da Unicamp.
+
+
+\section{Cronograma}\label{sec:cronograma}
+
+\begin{table}[ht]
+\centering
+\caption{Cronograma de realização prevista do projeto}
+\label{tab:cronograma}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Tarefa/Mês} & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 \\ \hline
+\begin{tabular}[c]{@{}c@{}}Descrição do espaço\\  topológico de solução\end{tabular} & x & x &  &  &  &  &  &  &  &  &  &  \\ \hline
+Modelagem do APUF &  & x &  &  &  &  &  &  &  &  &  &  \\ \hline
+\begin{tabular}[c]{@{}c@{}}Criação de heurísticas\\  de solução\end{tabular} &  &  & x & x & x &  &  &  &  &  &  &  \\ \hline
+\begin{tabular}[c]{@{}c@{}}Extensão para outros\\  modelos de PUFs\end{tabular} &  &  &  &  & x & x & x &  &  &  &  &  \\ \hline
+\begin{tabular}[c]{@{}c@{}}Descrição de métricas de\\  aleatoriadade teórica de PUFs\end{tabular} &  &  &  &  &  &  & x & x & x & x &  &  \\ \hline
+Elaboração do Relatório &  &  &  &  &  &  &  &  &  &  & x & x \\ \hline
+\end{tabular}
+\end{table}
+
+% #########################################################################################
+
+\end{spacing}
+
+
+
+
+\def\refname{Referências Bibliográficas}
+\bibliography{pufbib}
+
+\end{document}
